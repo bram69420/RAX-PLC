@@ -1,13 +1,11 @@
 .intel_syntax noprefix
 
 .section .data
-
 .align 4
-plc_memory:
+plc_memory: 
     .zero 4096
 
 .section .text
-
 .global plc_init
 .global plc_read_u32
 .global plc_write_u32
@@ -18,40 +16,19 @@ plc_init:
     xor eax, eax
     ret
 
-
 .type plc_read_u32, @function
 plc_read_u32:
-    /*
-     * System V x86-64 ABI:
-     *
-     * RDI = address
-     * RSI = pointer to output value
-     *
-     * Return:
-     *   EAX = 0 success
-     *   EAX = -1 invalid address
-     *   EAX = -2 null pointer
-     */
-
     test rsi, rsi
     jz .read_null
-
     cmp edi, 4092
     ja .read_invalid
-
-    /*
-     * Address must be 32-bit aligned.
-     */
-    test edi, 3
+    test edi, 3 
     jnz .read_invalid
 
-    lea rcx, plc_memory
     mov eax, edi
-    add rcx, rax
-
-    mov eax, DWORD PTR [rcx]
-    mov DWORD PTR [rsi], eax
-
+    mov ecx, DWORD PTR plc_memory[rax]
+    mov DWORD PTR [rsi], ecx
+    
     xor eax, eax
     ret
 
@@ -63,37 +40,23 @@ plc_read_u32:
     mov eax, -1
     ret
 
-
 .type plc_write_u32, @function
 plc_write_u32:
-    /*
-     * RDI = address
-     * RSI = value
-     *
-     * Return:
-     *   EAX = 0 success
-     *   EAX = -1 invalid address
-     */
 
     cmp edi, 4092
     ja .write_invalid
-
     test edi, 3
     jnz .write_invalid
-
-    lea rcx, plc_memory
+    
     mov eax, edi
-    add rcx, rax
-
-    mov DWORD PTR [rcx], esi
-
-    xor eax, eax
+    mov DWORD PTR plc_memory[rax], esi
+    
+    xor eax, eax # 0 success
     ret
 
 .write_invalid:
-    mov eax, -1
+    mov eax, -1 # 1 invalide addr
     ret
-
 
 .type plc_shutdown, @function
 plc_shutdown:
